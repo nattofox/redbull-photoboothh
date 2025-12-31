@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red Bull Photobooth</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #0b1d3a, #001033);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: white;
+}
+
+.container {
+  background: #08162f;
+  border-radius: 22px;
+  padding: 18px;
+  width: 90%;
+  max-width: 360px;
+  text-align: center;
+  position: relative;
+}
+
+.container::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 26px;
+  background: linear-gradient(45deg, #ff1e1e, #ffd500, #1e90ff);
+  z-index: -1;
+}
+
+h1 {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+video, canvas {
+  width: 100%;
+  border-radius: 16px;
+  border: 4px solid #ffd500;
+}
+
+#timer {
+  font-size: 48px;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+button {
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: none;
+  background: #ff1e1e;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #ffd500;
+  color: black;
+}
+
+.footer {
+  margin-top: 6px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>🏎️ Red Bull Photobooth</h1>
+
+  <video id="video" autoplay></video>
+  <div id="timer"></div>
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <button onclick="startTimer()">⏱️ Start Photobooth</button>
+  <button onclick="downloadPhoto()">⬇️ Download</button>
+
+  <div class="footer">Instagram ready • clean strip ✨</div>
+</div>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const timerEl = document.getElementById("timer");
+
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => video.srcObject = stream);
+
+const stickers = ["⭐","✨","🐻","🐱","🏁","⚡","🎀"];
+let photos = [];
+let shot = 0;
+
+function startTimer() {
+  photos = [];
+  shot = 0;
+  takeWithTimer();
+}
+
+function takeWithTimer() {
+  let count = 3;
+  timerEl.textContent = count;
+
+  const interval = setInterval(() => {
+    count--;
+    timerEl.textContent = count > 0 ? count : "📸";
+
+    if (count < 0) {
+      clearInterval(interval);
+      capture();
+    }
+  }, 1000);
+}
+
+function capture() {
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = 1080;
+  tempCanvas.height = 360;
+  const tctx = tempCanvas.getContext("2d");
+
+  tctx.drawImage(video, 0, 0, 1080, 360);
+  photos.push(tempCanvas);
+
+  shot++;
+  if (shot < 3) {
+    setTimeout(takeWithTimer, 600);
+  } else {
+    buildStrip();
+  }
+}
+
+function buildStrip() {
+  video.style.display = "none";
+  timerEl.textContent = "";
+  canvas.style.display = "block";
+
+  canvas.width = 1080;
+  canvas.height = 1350;
+
+  // background strip putih
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = 0; i < 3; i++) {
+    ctx.drawImage(photos[i], 0, i * 360);
+    ctx.strokeStyle = "#ffd500";
+    ctx.lineWidth = 12;
+    ctx.strokeRect(0, i * 360, 1080, 360);
+
+    ctx.font = "50px serif";
+    ctx.fillText(stickers[Math.floor(Math.random()*stickers.length)], 20, i * 360 + 60);
+  }
+
+  const date = new Date().toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
+  });
+
+  ctx.fillStyle = "#000";
+  ctx.font = "32px Poppins";
+  ctx.fillText("RED BULL VIBES 🐂", 30, 1320);
+  ctx.fillText(date, 720, 1320);
+}
+
+function downloadPhoto() {
+  const link = document.createElement("a");
+  link.download = "redbull-photobooth-instagram.png";
+  link.href = canvas.toDataURL();
+  link.click();
+}
+</script>
+
+</body>
+</html>
